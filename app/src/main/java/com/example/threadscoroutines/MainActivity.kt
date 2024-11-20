@@ -5,7 +5,13 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
+import com.example.threadscoroutines.api.EnderecoApi
+import com.example.threadscoroutines.api.PostagemApi
+import com.example.threadscoroutines.api.RetrofitHelper
 import com.example.threadscoroutines.databinding.ActivityMainBinding
+import com.example.threadscoroutines.model.Comentario
+import com.example.threadscoroutines.model.Endereco
+import com.example.threadscoroutines.model.Postagem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -17,12 +23,17 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import retrofit2.Response
+import retrofit2.create
 import kotlin.system.measureTimeMillis
 
 class MainActivity : AppCompatActivity() {
 
     private val binding by lazy{
         ActivityMainBinding.inflate(layoutInflater)
+    }
+    private val retrofit by lazy{
+        RetrofitHelper.retrofit
     }
 
     private var pararThread = false
@@ -35,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+
 
         binding.btnTela.setOnClickListener {
             startActivity(
@@ -51,17 +64,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnIniciar.setOnClickListener {
-//            MainScope().launch{
+/*//            MainScope().launch{
 //            CoroutineScope(Dispatchers.IO).launch{
 //            GlobalScope.launch {
-            lifecycleScope.launch {
-                repeat(15){ indice ->
+//            lifecycleScope.launch {
+//                repeat(15){ indice ->
 //                    binding.btnIniciar.text="Executando $indice"
-
-                    Log.i("info_coroutine","Executando: $indice T: ${Thread.currentThread().name}")
-                    delay(1000L)
-                }
-            }
+//
+//                    Log.i("info_coroutine","Executando: $indice T: ${Thread.currentThread().name}")
+//                    delay(1000L)
+//                }
+//            }
 
            /* job = CoroutineScope(Dispatchers.IO).launch {
 //                binding.btnIniciar.text = "Executou"
@@ -111,7 +124,113 @@ class MainActivity : AppCompatActivity() {
                     Thread.sleep(1000)
                 }
             }.start()*/
+*/
+            CoroutineScope(Dispatchers.IO).launch {
+//                recuperarEndereco()
+//                recuperarPostagens()
+//                recuperarPostagemUnica()
+                recuperarComentariosPostagem()
+            }
 
+        }
+
+    }
+    private suspend fun recuperarComentariosPostagem() {
+
+        var retorno: Response<List<Comentario>>? = null
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+            retorno = postagemApi.recuperarComentariosPostagem(1)
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val listaComentarios = retorno.body()
+                var resultado = ""
+                listaComentarios?.forEach {comentario ->
+                    val idComentario = comentario.id
+                    val email = comentario.email
+                    val comentarioResultado = "$idComentario - $email \n"
+                    resultado += comentarioResultado
+                }
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = resultado
+                }
+            }
+        }
+    }
+
+    private suspend fun recuperarPostagemUnica() {
+        var retorno: Response<Postagem>? = null
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+            retorno = postagemApi.recuperarPostagemUnica(1)
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val postagem = retorno.body()
+                val resultado = "${postagem?.id},${postagem?.title}"
+
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = resultado
+                }
+
+                Log.i("info_jsonplace",resultado)
+            }
+        }
+    }
+
+    private suspend fun recuperarPostagens() {
+        var retorno: Response<List<Postagem>>? = null
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+            retorno = postagemApi.recuperarPostagens()
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val listaPostagens = retorno.body()
+                listaPostagens?.forEach {postagem ->
+                    val id = postagem.id
+                    val title = postagem.title
+                    Log.i("info_jsonplace","$id, $title")
+                }
+            }
+        }
+    }
+
+    private suspend fun recuperarEndereco(){
+        var retorno: Response<Endereco>? = null
+        val cepDigitado = "01001000"
+
+        try {
+            val enderecoApi = retrofit.create(EnderecoApi::class.java)
+            enderecoApi.recuperarEndereco(cepDigitado)
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_endereco","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val endereco = retorno.body()
+                val rua = endereco?.logradouro
+                val cidade = endereco?.localidade
+                Log.i("info_endereco","Endereco: $rua, $cidade")
+            }
         }
 
     }
@@ -187,7 +306,6 @@ class MainActivity : AppCompatActivity() {
 
         }
     }
-
 
 
     inner class MinhaClasse : Thread(){
