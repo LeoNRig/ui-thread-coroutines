@@ -11,7 +11,9 @@ import com.example.threadscoroutines.api.RetrofitHelper
 import com.example.threadscoroutines.databinding.ActivityMainBinding
 import com.example.threadscoroutines.model.Comentario
 import com.example.threadscoroutines.model.Endereco
+import com.example.threadscoroutines.model.Foto
 import com.example.threadscoroutines.model.Postagem
+import com.squareup.picasso.Picasso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -129,12 +131,211 @@ class MainActivity : AppCompatActivity() {
 //                recuperarEndereco()
 //                recuperarPostagens()
 //                recuperarPostagemUnica()
-                recuperarComentariosPostagem()
+//                recuperarSalvarPostagem()
+//                recuperarComentariosPostagem()
+//                salvarPostagemFormEncoded()
+//                atualizarPostagem()
+//                deletarPostagem()
+                recuperarFotoUnica()
             }
 
         }
 
     }
+    private suspend fun recuperarFotoUnica() {
+        var retorno: Response<Foto>? = null
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+            retorno = postagemApi.recuperarFoto(5)
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val foto = retorno.body()
+                val resultado = "[${retorno.code()}] ${foto?.id},${foto?.url}"
+
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = resultado
+                    Picasso.get()
+                        .load(R.drawable.picasso)
+                        .resize(100, 200)
+//                        .centerInside()
+//                        .centerCrop()
+                        .placeholder(R.drawable.carregando)
+//                        .error(R.drawable.ic_launcher_background)
+                        .into(binding.imgFoto)
+                }
+
+                Log.i("info_jsonplace",resultado)
+            }else{
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = "ERRO CODE:${retorno.code()}"
+                }
+            }
+        }
+    }
+
+    private suspend fun deletarPostagem() {
+
+        var retorno: Response<Unit>? = null
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+            retorno = postagemApi.deletarPostagem(1)
+            /*retorno = postagemApi.atualizarPostagemPut(
+                1,
+                Postagem("Corpo da postagem",-1,"Titulo",1090)
+            )*/
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+
+                var resultado = "[${retorno.code()}] Removido com Sucesso!"
+
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = resultado
+                }
+            }else{
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = "ERRO CODE:${retorno.code()}"
+                }
+            }
+        }
+    }
+
+    private suspend fun atualizarPostagem() {
+
+        var retorno: Response<Postagem>? = null
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+            retorno = postagemApi.atualizarPostagemPatch(
+                1,
+                Postagem("Corpo da postagem",-1,"Titulo",1090)
+            )
+            /*retorno = postagemApi.atualizarPostagemPut(
+                1,
+                Postagem("Corpo da postagem",-1,"Titulo",1090)
+            )*/
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val postagem = retorno.body()
+
+                val id = postagem?.id
+                val titulo = postagem?.title
+                val userId = postagem?.userId
+                val corpo = postagem?.body
+
+                var resultado = "[${retorno.code()}] $id - $titulo - $userId - $corpo"
+
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = resultado
+                }
+            }else{
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = "ERRO CODE:${retorno.code()}"
+                }
+            }
+        }
+    }
+
+    private suspend fun salvarPostagemFormEncoded() {
+
+        var retorno: Response<Postagem>? = null
+
+        val postagem = Postagem(
+            "Corpo da postagem",
+            -1,
+            "Titulo da postagem",
+            1090
+        )
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+//            retorno = postagemApi.salvarPostagem(postagem)
+            retorno = postagemApi.salvarPostagemFormEncoded(
+                1090,
+                -1,
+                "Titulo da postagem",
+                "Body"
+            )
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val postagem = retorno.body()
+
+                val id = postagem?.id
+                val titulo = postagem?.title
+                val userId = postagem?.userId
+                var resultado = "[${retorno.code()}] $id - $titulo - $userId"
+
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = resultado
+                }
+            }else{
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = "ERRO CODE:${retorno.code()}"
+                }
+            }
+        }
+    }
+
+    private suspend fun recuperarSalvarPostagem() {
+
+        var retorno: Response<Postagem>? = null
+
+        val postagem = Postagem(
+            "Corpo da postagem",
+            -1,
+            "Titulo da postagem",
+            1090
+        )
+
+        try {
+            val postagemApi = retrofit.create(PostagemApi::class.java)
+            retorno = postagemApi.salvarPostagem(postagem)
+        }catch (e: Exception){
+            e.printStackTrace()
+            Log.i("info_jsonplace","Erro ao Recuperar")
+        }
+
+        if(retorno != null){
+            if(retorno.isSuccessful){
+                val postagem = retorno.body()
+
+                val id = postagem?.id
+                val titulo = postagem?.title
+                val userId = postagem?.userId
+                var resultado = "[${retorno.code()}] $id - $titulo - $userId"
+
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = resultado
+                }
+            }else{
+                withContext(Dispatchers.Main){
+                    binding.textResultado.text = "ERRO CODE:${retorno.code()}"
+                }
+            }
+        }
+    }
+
     private suspend fun recuperarComentariosPostagem() {
 
         var retorno: Response<List<Comentario>>? = null
@@ -142,6 +343,7 @@ class MainActivity : AppCompatActivity() {
         try {
             val postagemApi = retrofit.create(PostagemApi::class.java)
             retorno = postagemApi.recuperarComentariosPostagem(1)
+            retorno = postagemApi.recuperarComentariosPostagemQuery(1)
         }catch (e: Exception){
             e.printStackTrace()
             Log.i("info_jsonplace","Erro ao Recuperar")
